@@ -13,13 +13,18 @@
 
 package org.jickr;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -92,18 +97,22 @@ class Request {
      * @param customBase - An unusual URL to use for the request.  Used for Authentication.
      */
     Request(String customBase) {
-        this(GET, customBase);
+    	base = customBase;
+        parameters.put("api_key",Flickr.getApiKey());
     }
     
     /** Creates a new instance of request with a custom call base.
-     *  Used for authentication pre-calls.  A shorthand way to generate a signed call.
+     *  A shorthand way to generate a signed call.
      * @param type - one of GET or POST
-     * @param customBase - An unusual URL to use for the request.  Used for Authentication.
+     * @param customBase - An unusual URL to use for the request. Used to do POST by example.
      */
-    private Request(int type, String customBase) {
+    public Request(int type, String customBase) throws FlickrException {
         if (type != GET && type != POST) throw new IllegalArgumentException("type not allowed");
         base = customBase;
+        this.type = type;
         parameters.put("api_key",Flickr.getApiKey());
+        User user = Auth.getAuthContext();
+        if (user != null) parameters.put("auth_token",Auth.getToken(user));
     }
     
     void setParameter(String parameter, Object value) {
@@ -170,42 +179,106 @@ class Request {
         return requestURL;
     }
     
-    private String getParams() {
-        String requestParam = "";
-        // string to compute the signature
-        String paramString = "";
-        boolean first = true;
-        for (Map.Entry<String,Object>entry : parameters.entrySet()) {
-        	
-        	if (entry.getValue() instanceof String){
-	            paramString += entry.getKey()+entry.getValue();
-        	}
-        	
-            try {
-                if (first) {
-                    first = false;
-                } else {
-                    requestParam += "&";
-                }
-                requestParam += URLEncoder.encode(entry.getKey(),"UTF-8")+"="+
-                        URLEncoder.encode((String) entry.getValue(),"UTF-8");
-            } catch (UnsupportedEncodingException ex) {
-                ex.printStackTrace();
-                // No Fixing this, really
-                throw new Error("Unsupported Encoding Exception",ex);
-            }
-        	}
-        
-        // Now compute and add the signature, if appropriate
-        if (signed) {
-            requestParam += "&api_sig="+getSig(paramString);
-        }
-        return requestParam;
-    }
+	private String getParams() {
+		String requestParam = "";
+		// string to compute the signature
+		String paramString = "";
+		boolean first = true;
+		for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+
+			if (entry.getValue() instanceof String) {
+				paramString += entry.getKey() + entry.getValue();
+			}
+
+			try {
+				if (first) {
+					first = false;
+				} else {
+					requestParam += "&";
+				}
+				requestParam += URLEncoder.encode(entry.getKey(), "UTF-8")
+						+ "="
+						+ URLEncoder.encode((String) entry.getValue(), "UTF-8");
+			} catch (UnsupportedEncodingException ex) {
+				ex.printStackTrace();
+				// No Fixing this, really
+				throw new Error("Unsupported Encoding Exception", ex);
+			}
+		}
+
+		// Now compute and add the signature, if appropriate
+		if (signed) {
+			requestParam += "&api_sig=" + getSig(paramString);
+		}
+		return requestParam;
+	}
     
-    private List<String> getPOSTParams(){
-		return null;
+    /**
+     * Utility method to send POST params (to upload files by example)
+     * @param os DataOutputStream got by getConnectionOutputStream() method
+     * @param key the param name
+     * @param value the value of param
+     * @throws FlickrException 
+     * @throws UnsupportedEncodingException 
+     * @throws IOException
+     */
+    private void sendPOSTParams(OutputStream os, String key, Object value) throws FlickrException, FlickrException, UnsupportedEncodingException, IOException{
+		
+    	DataOutputStream dos = (DataOutputStream) os;
     	
+    	// Start line 
+    	dos.writeBytes(twoHyphens + boundary + lineEnd);
+    	
+    	// String value
+    	if (value instanceof String) {
+    		dos.writeBytes("Content-Disposition: form-data; name=\""+
+    					    key+"\""+lineEnd);
+    		dos.writeBytes(lineEnd);
+    		dos.writeBytes((String) value);
+    	}
+    	
+    	// File value
+    	else if (value instanceof File){
+    		
+    		// Declaration
+    		int bytesRead, bytesAvailable, bufferSize;
+		    byte[] buffer;
+		    int maxBufferSize = 1*1024*1024;
+    		
+		    File f = (File) value;
+		    FileInputStream fileInputStream = new FileInputStream(f);
+			
+    		dos.writeBytes("Content-Disposition: form-data; name=\""+
+    					   key+"\";" 
+    					   +" filename=\""+f.getPath()+"\"" + lineEnd);
+    		dos.writeBytes("Content-Type: "+MimeType.getMimeType(f.getPath())+lineEnd);
+    		dos.writeBytes(lineEnd);
+    		
+    		// create a buffer of maximum size
+		    bytesAvailable = fileInputStream.available();
+		    bufferSize = Math.min(bytesAvailable, maxBufferSize);
+		    buffer = new byte[bufferSize];
+
+		    // read file and write it into form...
+		    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+		    while (bytesRead > 0)
+		    {
+		     dos.write(buffer, 0, bufferSize);
+		     bytesAvailable = fileInputStream.available();
+		     bufferSize = Math.min(bytesAvailable, maxBufferSize);
+		     bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+		    }
+		    
+		    // Close the FileInputStream
+		    fileInputStream.close();
+		    
+    	} else throw new FlickrException("Param value class type not supported: "+value.getClass().getName());
+    		
+	    
+	    // Final end line
+    	dos.writeBytes(lineEnd);
+     	
     }
     
     private InputStream getConnectionResponse() throws IOException {
@@ -240,12 +313,12 @@ class Request {
     }
     
     /**
-     * Establish POST HTTP connection and return the OutputStream
+     * Establish POST HTTP connection and return the connection
      * @param urlString URL of Flickr services (see Flickr class)
-     * @return the outputStream to post data
+     * @return the URLConnection ready to stream
      * @throws IOException
      */
-    private OutputStream getConnectionOutputStream(String urlString) throws IOException{
+    private URLConnection getURLConnectionPOST(String urlString) throws IOException{
     	
     	// Declaration / instantiation
     	URL url = new URL(urlString);
@@ -262,9 +335,8 @@ class Request {
 	    urlConn.setRequestMethod("POST");		 
 	    urlConn.setRequestProperty("Connection", "Keep-Alive");		    
 	    urlConn.setRequestProperty("Content-Type", "multipart/form-data;boundary="+boundary);
-	    dos = new DataOutputStream( urlConn.getOutputStream() );
-	    
-	    return dos;
+	      
+	    return urlConn;
     }
     
     /**
@@ -283,20 +355,39 @@ class Request {
         Element root;
         InputStream in = null;
         DataOutputStream dos = null;
+        HttpURLConnection urlConn=null;
         
         try {
-            
-        	// Instantiate and get the connection outputstream
-		    dos = (DataOutputStream) getConnectionOutputStream(base);	
+        	// Get HTTP connection
+        	urlConn = (HttpURLConnection) getURLConnectionPOST(base);
         	
-        	// Envoyer les paires paramName/value
+        	// Instantiate and get the connection DataOutputStream
+		    dos = new DataOutputStream( urlConn.getOutputStream() );
         	
+        	// Send pairs paramName/value
+		    String paramString = "";
+		    for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+		    	
+		    	// Prepare signature
+				if (entry.getValue() instanceof String) {
+					paramString += entry.getKey() + entry.getValue();
+				}
+
+				// Send data
+				sendPOSTParams(dos, entry.getKey(), entry.getValue());			
+			}
         	// Signature
+		    sendPOSTParams(dos, "api_sig", getSig(paramString));
+		    
+		    // End transmission
+		    dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+		    
+        	// Close the DataOutputStrem
+		    dos.flush();
+		    dos.close();
         	
-        	// Fermeture du DataOutputStrem
-        	
-        	// Récupération de la réponse
-            in = getConnectionResponse();
+        	// Get server response
+            in = urlConn.getInputStream();
             doc = sb.build(in);
             root = doc.getRootElement();
             
@@ -327,6 +418,7 @@ class Request {
             } catch (Exception ex) {
                 // And silently ignore, since we're just trying to see if it works.  
                 // If it doesn't work, that's good too.
+            	ex.printStackTrace();
             }
         }
     	    	
