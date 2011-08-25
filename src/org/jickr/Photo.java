@@ -293,7 +293,10 @@ public class Photo implements Comparable <Photo>{
     }
     
 	/**
-     * Create a new Photo instance from file
+     * Utility method for uploading new photos to Flickr.
+     * This method requires a PhotoUpload object for encapsulate informations 
+     * needed for the upload.
+     * 
      * @return id of photo uploaded
      * @throws FlickrException For any error.
      */
@@ -338,9 +341,39 @@ public class Photo implements Comparable <Photo>{
     	if (photoUpload.getContentType() != null)
     		req.setParameter("safety_level", String.valueOf(photoUpload.getContentType().getXmlValue()));
 
+    	// POST and get response
 		Document doc = req.postAndGetResponse();
 	
 		return doc.getRootElement().getChildText("photoid");    	
+    }
+    
+    /**
+     * Utility method for uploading and replace an existing photo to Flickr.
+     * This method requires the id of the photo to replace, the new photo file and type of
+     * connection (sync or async).
+     * 
+     * @param idPhotoToReplace id of the photo to relpace
+     * @param newPhoto new photo file
+     * @param async connection type (synchronous or asynchronous)
+     * @return the Flickr id of the new photo
+     * @throws FlickrException For any error.
+     */
+    public static String uploadAndReplacePhoto(String idPhotoToReplace, File newPhotoFile, Boolean async) throws FlickrException{
+    	if (idPhotoToReplace == null) throw new FlickrException("Can't replace a photo without its id");
+    	if (newPhotoFile == null) throw new FlickrException("Can't replace a photo without a new file");
+    	
+    	// Generate the request
+    	Request req = new Request(Request.POST, Flickr.getReplaceURL());
+    	// Set parameters of the request
+    	req.setParameter("photo", newPhotoFile);
+    	req.setParameter("photo_id", idPhotoToReplace);
+    	if (async != null)
+    		req.setParameter("async", async ? "1" : "0");
+    	
+    	// POST and get response
+    	Document doc = req.postAndGetResponse();
+    	
+		return doc.getRootElement().getChildText("photoid");
     }
     
     /**
