@@ -26,6 +26,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
@@ -37,6 +38,8 @@ import javax.imageio.ImageIO;
 import org.jdom.DataConversionException;
 import org.jdom.Document;
 import org.jdom.Element;
+import org.jickr.Photo.PhotoSize;
+import org.jickr.Photo.Size;
 
 /**
  *
@@ -59,7 +62,7 @@ public class Photo implements Comparable <Photo>{
 	}
 	
     /**
-     * List of possibly valid Photo sizes.  Actual sizes available may be smaller.
+     * List of possibly valid Photo sizes.
      */
     public enum Size {
         /**
@@ -122,6 +125,7 @@ public class Photo implements Comparable <Photo>{
     
     /**
      * Authorization
+     * Used to determine the autorizations on each photo for commenting or tagging
      * @author jbrek
      *
      */
@@ -174,82 +178,22 @@ public class Photo implements Comparable <Photo>{
 		}
 	}
     
-    /**
-     * Access rights
-     * @author jbrek
-     *
-     */
-    public enum AccessRight {
-		
-   
-    	PRIVATE(0),
-
-		FAMILY(1),
-
-		FRIENDS(2),
-		
-		FAMILY_FRIENDS(3),
-		
-		PUBLIC(4);
-    	
-    	private int xmlValue;
-    	
-    	AccessRight(int xmlValue){
-    		
-    		this.xmlValue = xmlValue;
-    	}
-
-		public int getXmlValue() {
-			return xmlValue;
-		}
-    	
-		public static AccessRight getEnumFromValue(boolean isPublic, boolean isFamily, boolean isFriends){
-			
-			if (isPublic)
-				return AccessRight.PUBLIC;
-			else if(isFriends && isFamily)
-				return AccessRight.FAMILY_FRIENDS;
-			else if(isFamily)
-				return AccessRight.FAMILY;
-			else if(isFriends)
-				return AccessRight.FRIENDS;
-			else 
-				return AccessRight.PRIVATE;
-		}
-
-		@Override
-		public String toString() {
-			switch(xmlValue) {
-				case 0 : return "moi seulement";
-				case 1 : return "ma famille";
-				case 2 : return "mes amis";
-				case 3 : return "ma famille et mes amis";
-				case 4 : return "tout le monde";
-				default : return super.toString();
-			}
-		}
-		
-		
-	} 
     
     /**
      * Safety level
+     * Content security level of the photo (
      * @author jbrek
      *
      */
-    public enum SafetyLevel {
-		
+    public enum SafetyLevel {		
    
-    	SECURED(0),
-
-		MODERATE(1),
-
-		RESTRICTED(2);
+    	SECURED(0), /// Public content
+		MODERATE(1), /// If you don't know or you're not sure of the content safety
+		RESTRICTED(2); /// Adult content (sex, violence, racism...)
     	
     	private int xmlValue;
     	
-    	SafetyLevel(int xmlValue){
-    		
+    	SafetyLevel(int xmlValue){    		
     		this.xmlValue = xmlValue;
     	}
 
@@ -259,14 +203,42 @@ public class Photo implements Comparable <Photo>{
     	
 		public static SafetyLevel getEnumFromValue(int value){
 			switch (value) {
-			case 0:
-				return SafetyLevel.SECURED;
-			case 1:
-				return SafetyLevel.MODERATE;
-			case 2:
-				return SafetyLevel.RESTRICTED;
-			default:
-				return SafetyLevel.SECURED;
+			case 0:	return SafetyLevel.SECURED;
+			case 1:	return SafetyLevel.MODERATE;
+			case 2:	return SafetyLevel.RESTRICTED;
+			default: return SafetyLevel.SECURED;
+			}
+		}
+	}
+    
+    /**
+     * Content type
+     * Content types of Flickr
+     * @author jbrek
+     *
+     */
+    public enum ContentType {		
+   
+    	PHOTO_VIDEO(0), /// Photos / Videos content
+    	ILLUSTRATION_ART_ANIMATION(1), /// Illustration/Art / Animation/CGI or other non-photographic images 
+    	SCREENSHOT_SCREENCAST(2); /// Screencasts / Screenshots content
+    	
+    	private int xmlValue;
+    	
+    	ContentType(int xmlValue){    		
+    		this.xmlValue = xmlValue;
+    	}
+
+		public int getXmlValue() {
+			return xmlValue;
+		}
+    	
+		public static ContentType getEnumFromValue(int value){
+			switch (value) {
+			case 0:	return ContentType.PHOTO_VIDEO;
+			case 1:	return ContentType.ILLUSTRATION_ART_ANIMATION;
+			case 2:	return ContentType.SCREENSHOT_SCREENCAST;
+			default: return ContentType.PHOTO_VIDEO;
 			}
 		}
 	}
@@ -283,8 +255,7 @@ public class Photo implements Comparable <Photo>{
     private BufferedImage image = null;
     private Size imageSize = null;
  
-    
-    private Map<Size,PhotoSize> sizes = new EnumMap(Size.class);
+    private Map<Size,PhotoSize> sizes = new EnumMap<Size, PhotoSize>(Size.class);
     
     private String id;
     private String secret;
@@ -319,6 +290,57 @@ public class Photo implements Comparable <Photo>{
         this.id = id;
         this.secret = secret;
         getInfo();
+    }
+    
+	/**
+     * Create a new Photo instance from file
+     * @return id of photo uploaded
+     * @throws FlickrException For any error.
+     */
+    public static String uploadNewPhoto(PhotoUpload photoUpload) throws FlickrException{
+    	if (photoUpload == null) throw new FlickrException("Can't upload a photo without PhotoUpload");
+    	if (photoUpload.getPhoto() == null) throw new FlickrException("Can't upload a photo from null PhotoUpload.photo");
+    	
+    	// Generate the request
+    	Request req = new Request(Request.POST, Flickr.getUploadURL());
+    	// Set parameters of the request
+    	req.setParameter("photo", photoUpload.getPhoto());
+    	if (!photoUpload.getTitle().equals(""))
+    		req.setParameter("title", photoUpload.getTitle());
+    	if (!photoUpload.getDescription().equals(""))
+    		req.setParameter("description", photoUpload.getDescription());
+    	
+    	boolean first = true;
+    	String tagsString = "";
+    	for(String val : photoUpload.getTags()) { 
+    		if (first) {
+    			first = false;
+    		} else {
+    			tagsString += " ";    			
+    		}
+    		tagsString += val; 
+    	}
+    	if (!tagsString.equals(""))
+    		req.setParameter("tags", tagsString);
+    	
+    	if (photoUpload.isPublicFlag() != null)
+    		req.setParameter("is_public", photoUpload.isPublicFlag() ? "1" : "0");
+    	
+    	if (photoUpload.isFriendFlag() != null)
+    		req.setParameter("is_friend", photoUpload.isFriendFlag() ? "1" : "0");
+    	
+    	if (photoUpload.isFamilyFlag() != null)
+    		req.setParameter("is_family", photoUpload.isFamilyFlag() ? "1" : "0");
+    	
+    	if (photoUpload.getSafetyLevel() != null)
+    		req.setParameter("safety_level", String.valueOf(photoUpload.getSafetyLevel().getXmlValue()));
+		
+    	if (photoUpload.getContentType() != null)
+    		req.setParameter("safety_level", String.valueOf(photoUpload.getContentType().getXmlValue()));
+
+		Document doc = req.postAndGetResponse();
+	
+		return doc.getRootElement().getChildText("photoid");    	
     }
     
     /**
@@ -968,7 +990,7 @@ public class Photo implements Comparable <Photo>{
      * @see org.netdance.flickr.Photo
      * @author driscoll
      */
-    private class PhotoSize {
+    class PhotoSize {
         
         private Size size ;
         private String sizeString;
@@ -1076,12 +1098,10 @@ public class Photo implements Comparable <Photo>{
      * @author jbrek
      *
      */
-    public class PhotoPermissions {
-    	
-    	
+    public class PhotoPermissions {    	
     	
     	// Visibility permissions
-    	private AccessRight permission;
+    	private Privacy privacy;
     	
     	// Registred user comments/meta permissions
     	private Authorization permcomment; // Permission to comment 
@@ -1116,7 +1136,7 @@ public class Photo implements Comparable <Photo>{
     		Element publiceditability = photo.getChild("publiceditability");
     		Element usage = photo.getChild("usage");
     		
-    		permission = AccessRight.getEnumFromValue(visibility.getAttribute("ispublic").getBooleanValue(), 
+    		privacy = Privacy.getEnumFromValue(visibility.getAttribute("ispublic").getBooleanValue(), 
     												   visibility.getAttribute("isfriend").getBooleanValue(), 
     												   visibility.getAttribute("isfamily").getBooleanValue());
     		
@@ -1145,7 +1165,7 @@ public class Photo implements Comparable <Photo>{
     	public PhotoPermissions(Element perms, int a) throws DataConversionException {
 			
     		// Get attributes
-    		permission = AccessRight.getEnumFromValue(perms.getAttribute("ispublic").getBooleanValue(), 
+    		privacy = Privacy.getEnumFromValue(perms.getAttribute("ispublic").getBooleanValue(), 
     				perms.getAttribute("isfriend").getBooleanValue(), 
     				perms.getAttribute("isfamily").getBooleanValue());
 
@@ -1154,8 +1174,8 @@ public class Photo implements Comparable <Photo>{
     		
 		}
 
-		public AccessRight getPermission() {
-			return permission;
+		public Privacy getPermission() {
+			return privacy;
 		}
 
 
@@ -1197,9 +1217,6 @@ public class Photo implements Comparable <Photo>{
 
 		public boolean isCanshare() {
 			return canshare;
-		}
-    	
-    	
-    	
+		}    	
     }
 }

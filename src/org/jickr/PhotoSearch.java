@@ -121,34 +121,4 @@ public class PhotoSearch {
     public Privacy getPrivacy() {
         return priv;
     }
-    
-    
-    
-    
-    /**
-     * Privacy value associated with an object on Flickr.
-     * @author driscoll
-     */
-    public enum Privacy {
-        /**
-         * The object is visible to everyone.
-         */
-        PUBLIC,
-        /**
-         * The object is visible only to people marked as a friend on Flickr.
-         */
-        FRIENDS,
-        /**
-         * The object is visible only to people marked as family on Flickr.
-         */
-        FAMILY,
-        /**
-         * The object is visible only to people marked either a friend or family on Flickr.
-         */
-        FRIENDSANDFAMILY,
-        /**
-         * The object is visible only to the authenticated user, it is completely private.
-         */
-        PRIVATE }
-    
 }

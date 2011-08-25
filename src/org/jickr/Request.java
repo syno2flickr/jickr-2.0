@@ -391,22 +391,9 @@ class Request {
             doc = sb.build(in);
             root = doc.getRootElement();
             
-            if (!root.getAttributeValue("stat").equals("ok")) {
-                Element err = root.getChild("err");
-                String codeString = err.getAttributeValue("code");
-                int code = 0;
-                if (codeString != null) {
-                    try {
-                        code = Integer.parseInt(codeString);
-                    } catch (NumberFormatException nfe) {
-                        // I'm stumped, we'll have to carry on
-                        Logger.global.severe("Warning: Unexpected Return Code Returned, continuing: "+codeString);
-                    }
-                }
-                FlickrException fe = new FlickrException("Error: "+err.getAttributeValue("msg")
-                +" (Code: "+err.getAttributeValue("code")+")",code);
-                throw fe;
-            }
+            // Check result
+            verifyResponse (root);
+            
             return doc;
         } catch (IOException ex) {
             throw new FlickrException("IO Error: "+ex.getMessage(),ex);
@@ -450,22 +437,9 @@ class Request {
             doc = sb.build(in);
             root = doc.getRootElement();
             
-            if (!root.getAttributeValue("stat").equals("ok")) {
-                Element err = root.getChild("err");
-                String codeString = err.getAttributeValue("code");
-                int code = 0;
-                if (codeString != null) {
-                    try {
-                        code = Integer.parseInt(codeString);
-                    } catch (NumberFormatException nfe) {
-                        // I'm stumped, we'll have to carry on
-                        Logger.global.severe("Warning: Unexpected Return Code Returned, continuing: "+codeString);
-                    }
-                }
-                FlickrException fe = new FlickrException("Error: "+err.getAttributeValue("msg")
-                +" (Code: "+err.getAttributeValue("code")+")",code);
-                throw fe;
-            }
+            // Check result
+            verifyResponse (root);
+            
             return doc;
         } catch (IOException ex) {
             throw new FlickrException("IO Error: "+ex.getMessage(),ex);
@@ -478,6 +452,33 @@ class Request {
                 // And silently ignore, since we're just trying to see if it works.  
                 // If it doesn't work, that's good too.
             }
+        }
+    }
+    
+    /**
+     * Verify the response returned after a Flickr request call. If an error is returned
+     * the method throws a FlickrException.
+
+     * @param rootResponse root response of Flickr request
+     * @throws FlickrException throw FlickrException if an error is returned from Response
+     */
+    private void verifyResponse(Element rootResponse) throws FlickrException{
+    	
+    	if (!rootResponse.getAttributeValue("stat").equals("ok")) {
+            Element err = rootResponse.getChild("err");
+            String codeString = err.getAttributeValue("code");
+            int code = 0;
+            if (codeString != null) {
+                try {
+                    code = Integer.parseInt(codeString);
+                } catch (NumberFormatException nfe) {
+                    // I'm stumped, we'll have to carry on
+                    Logger.global.severe("Warning: Unexpected Return Code Returned, continuing: "+codeString);
+                }
+            }
+            FlickrException fe = new FlickrException("Error: "+err.getAttributeValue("msg")
+            +" (Code: "+err.getAttributeValue("code")+")",code);
+            throw fe;
         }
     }
     
