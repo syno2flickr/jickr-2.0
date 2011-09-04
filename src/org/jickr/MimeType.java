@@ -19,6 +19,6 @@ public class MimeType {
 
 	public static void main(String args[]) throws Exception {
 		System.out.println(MimeType
-				.getMimeType("file://C:/test_upload/48037448.jpg"));
+				.getMimeType("file:///Users/jbrek/tmp/P1000944.JPG"));
 	}
 }

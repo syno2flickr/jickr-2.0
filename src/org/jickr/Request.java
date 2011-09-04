@@ -32,11 +32,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
+
+import javax.swing.event.EventListenerList;
+
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.XMLOutputter;
+
 
 /**
  * A class for encapsulating a request to Flickr.  This is an implementation class, not
@@ -63,12 +67,27 @@ class Request {
     private int type;
     
     private String base = Flickr.getBase();
-    private String uploadURL = Flickr.getUploadURL();
-    private String replaceURL = Flickr.getReplaceURL();
 
+    // POST request const
     private static final String lineEnd = "\r\n";
     private static final String twoHyphens = "--";
     private static final String boundary =  "*****";
+    
+    /** 
+	 * Listeners
+	 */
+	private EventListenerList listeners = new EventListenerList();
+	
+	// Listener methods for request notifications
+	public void addRequestListener(RequestListener l){ listeners.add(RequestListener.class, l); }	
+	public void removeRequestListener(RequestListener l){ listeners.remove(RequestListener.class, l); }	
+	public void fireRequestProgress(File progressFile, long progress, long totalProgress){
+		RequestListener[] listenerList = (RequestListener[])listeners.getListeners(RequestListener.class);
+		for(RequestListener l : listenerList){
+			l.progressRequest(new RequestEvent(this, progressFile, progress, totalProgress));
+		}
+	}
+    
     
     /**
      * Creates a new Authenticated request, type GET.
@@ -255,23 +274,29 @@ class Request {
     		dos.writeBytes(lineEnd);
     		
     		// create a buffer of maximum size
+    		long bytesReaded=0;
+    		long fileSize = f.length();
 		    bytesAvailable = fileInputStream.available();
 		    bufferSize = Math.min(bytesAvailable, maxBufferSize);
 		    buffer = new byte[bufferSize];
 
 		    // read file and write it into form...
 		    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-
+		    fireRequestProgress(f, bytesReaded, fileSize);
+		    
 		    while (bytesRead > 0)
 		    {
 		     dos.write(buffer, 0, bufferSize);
 		     bytesAvailable = fileInputStream.available();
 		     bufferSize = Math.min(bytesAvailable, maxBufferSize);
 		     bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+		     bytesReaded += bytesRead;
+		     fireRequestProgress(f, bytesReaded, fileSize);
 		    }
 		    
 		    // Close the FileInputStream
 		    fileInputStream.close();
+		    fireRequestProgress(f, fileSize, fileSize);
 		    
     	} else throw new FlickrException("Param value class type not supported: "+value.getClass().getName());
     		
@@ -331,7 +356,8 @@ class Request {
 	    urlConn.setDoOutput (true);
 	 
 	    // We want no caching
-	    urlConn.setUseCaches (false);		    
+	    urlConn.setUseCaches (false);		  
+	    urlConn.setChunkedStreamingMode(0); // To upload large files with segmentation
 	    urlConn.setRequestMethod("POST");		 
 	    urlConn.setRequestProperty("Connection", "Keep-Alive");		    
 	    urlConn.setRequestProperty("Content-Type", "multipart/form-data;boundary="+boundary);

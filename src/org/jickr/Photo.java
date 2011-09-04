@@ -301,11 +301,16 @@ public class Photo implements Comparable <Photo>{
      * @throws FlickrException For any error.
      */
     public static String uploadNewPhoto(PhotoUpload photoUpload) throws FlickrException{
+    	return uploadNewPhoto(photoUpload, null);
+    }
+    
+    public static String uploadNewPhoto(PhotoUpload photoUpload, RequestListener listener) throws FlickrException{
     	if (photoUpload == null) throw new FlickrException("Can't upload a photo without PhotoUpload");
     	if (photoUpload.getPhoto() == null) throw new FlickrException("Can't upload a photo from null PhotoUpload.photo");
     	
     	// Generate the request
     	Request req = new Request(Request.POST, Flickr.getUploadURL());
+    	if (listener!=null) req.addRequestListener(listener);
     	// Set parameters of the request
     	req.setParameter("photo", photoUpload.getPhoto());
     	if (!photoUpload.getTitle().equals(""))
