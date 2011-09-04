@@ -85,6 +85,25 @@ public class UserLimitations {
 
 	}
 
+	public String showUsageAndLimitations() throws FlickrException{
+		int denomMega = 1024*1024;
+		String res;
+		res="Usage and limitations status\n";
+		res+="  Pro account: "+ (this.isPro()?"yes":"no")+"\n";
+		res+="  Bandwith:\n";
+		res+="\tUnlimited: "+(this.isBandwidthUnlimited()?"yes":"no"+
+						   "\tMax: "+this.getBandwidthMaxBytes()/denomMega+"MB" +
+						   "\tRemaining: "+this.getBandwidthRemainingBytes()/denomMega+"MB"+
+						   "\tUsed: "+this.getBandwidthUsedBytes()/denomMega+"MB")+"\n";
+		res+="  Image:\n";
+		res+="\tMax size: "+ this.getFilesizeMaxBytes()/denomMega+"MB\n";
+		res+="  Video:\n";
+		res+="\tMax size: "+this.getVideosizeMaxBytes()/denomMega+"MB"+
+						   "\tRemaing: "+this.getVideosRemaining()+
+						   "\tUploaded: "+this.getVideosUploaded()+"\n";
+		return res;
+	}
+	
 	public boolean isPro() throws FlickrException {
 		if (!gotInfos) getUploadStatus();
 		return pro;

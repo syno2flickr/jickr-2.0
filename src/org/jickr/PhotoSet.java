@@ -80,6 +80,33 @@ public class PhotoSet {
     }
     
     /**
+     * Create new photo set.
+     * 
+     * @param title required.
+     * @param description optionnal.
+     * @param primaryPhotoId  required.
+     * @return
+     * @throws FlickrException
+     */
+    public static String newPhotoSet(String title, String description, String primaryPhotoId) throws FlickrException{
+    	if (title == null) throw new FlickrRuntimeException("title cannot be null");
+    	if (primaryPhotoId == null) throw new FlickrRuntimeException("primaryPhotoId cannot be null");
+    	Request req = new Request();
+    	req.setParameter("method","flickr.photosets.create");
+        req.setParameter("title",title);
+        if (description!=null)
+        	req.setParameter("description", description);
+        req.setParameter("primaryPhotoId",primaryPhotoId);
+    	
+        Document doc = req.getResponse();
+        Element root = doc.getRootElement();
+        Element photoset = root.getChild("photoset");
+        
+        // return PhotoSet
+    	return photoset.getAttributeValue("id");
+    }
+    
+    /**
      * Get the Title of the PhotoSet.
      * @return Title of the PhotoSet.
      */
@@ -207,11 +234,21 @@ public class PhotoSet {
      * @param photo Photo to add to the PhotoSet.
      */
     public void add(Photo photo) throws FlickrException {
-        if (photo == null) throw new NullPointerException("Photo cannot be null");
+    	if (photo == null) throw new NullPointerException("Photo cannot be null");
+    	add(photo.getID());
+        return;
+    }
+    
+    /**
+     * Adds a photo to a PhotoSet.  Requires WRITE authentication.
+     * @param photoId Photo id to add to the PhotoSet.
+     */
+    public void add(String photoId) throws FlickrException {
+        if (photoId == null) throw new NullPointerException("Photo id cannot be null");
         Request req = new Request(Request.POST);
         req.setParameter("method","flickr.photosets.addPhoto");
         req.setParameter("photoset_id",id);
-        req.setParameter("photo_id",photo.getID());
+        req.setParameter("photo_id",photoId);
         req.getResponse();
         return;
     }

@@ -68,6 +68,18 @@ public enum Privacy {
 		else 
 			return Privacy.PRIVATE;
 	}
+	
+	
+	public static Privacy valueOf(int value){
+		switch(value){
+		case 0: return Privacy.PRIVATE;
+		case 1: return Privacy.FAMILY;
+		case 2: return Privacy.FRIENDS;
+		case 3: return Privacy.FRIENDSANDFAMILY;
+		case 4: return Privacy.PUBLIC;
+		default: return Privacy.PRIVATE;
+		}
+	}
 
 	@Override
 	public String toString() {

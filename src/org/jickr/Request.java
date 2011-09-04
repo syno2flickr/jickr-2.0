@@ -262,7 +262,7 @@ class Request {
     		// Declaration
     		int bytesRead, bytesAvailable, bufferSize;
 		    byte[] buffer;
-		    int maxBufferSize = 1*1024*1024;
+		    int maxBufferSize = 64*1024;
     		
 		    File f = (File) value;
 		    FileInputStream fileInputStream = new FileInputStream(f);
@@ -357,7 +357,7 @@ class Request {
 	 
 	    // We want no caching
 	    urlConn.setUseCaches (false);		  
-	    urlConn.setChunkedStreamingMode(0); // To upload large files with segmentation
+	    urlConn.setChunkedStreamingMode(64*1024); // To upload large files with segmentation
 	    urlConn.setRequestMethod("POST");		 
 	    urlConn.setRequestProperty("Connection", "Keep-Alive");		    
 	    urlConn.setRequestProperty("Content-Type", "multipart/form-data;boundary="+boundary);
