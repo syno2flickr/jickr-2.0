@@ -295,9 +295,9 @@ public class Photo implements Comparable <Photo>{
 	/**
      * Utility method for uploading new photos to Flickr.
      * This method requires a PhotoUpload object for encapsulate informations 
-     * needed for the upload.
+     * needed to upload.
      * 
-     * @return id of photo uploaded
+     * @return id of photo uploaded or ticket id (if async mode)
      * @throws FlickrException For any error.
      */
     public static String uploadNewPhoto(PhotoUpload photoUpload) throws FlickrException{
@@ -344,12 +344,46 @@ public class Photo implements Comparable <Photo>{
     		req.setParameter("safety_level", String.valueOf(photoUpload.getSafetyLevel().getXmlValue()));
 		
     	if (photoUpload.getContentType() != null)
-    		req.setParameter("safety_level", String.valueOf(photoUpload.getContentType().getXmlValue()));
+    		req.setParameter("content_type", String.valueOf(photoUpload.getContentType().getXmlValue()));
+    	
+    	if (photoUpload.isAsync() != null)
+    		req.setParameter("async", photoUpload.isAsync() ? "1" : "0");
 
     	// POST and get response
 		Document doc = req.postAndGetResponse();
-	
-		return doc.getRootElement().getChildText("photoid");    	
+		
+		// Return photo id or ticket id (if async)
+		if (photoUpload.isAsync()==null || !photoUpload.isAsync())
+			return doc.getRootElement().getChildText("photoid");
+		else
+			return doc.getRootElement().getChildText("ticketid");
+    }
+    
+    
+    public static void checkTicket (String ticketid) throws FlickrException {
+    	if (ticketid == null) throw new FlickrException("Can't check ticket without ticket id");
+    	
+    	Request req = new Request();
+    	req.setParameter("method", "flickr.photos.upload.checkTickets");
+    	req.setParameter("tickets", ticketid);
+    	
+    	Document doc = req.getResponse();
+    	Element ticket = doc.getRootElement().getChild("uploader").getChild("ticket");
+//    	for (Element e : tickets){
+//    		System.out.println("id: "+e.getAttributeValue("id"));
+//    		if (e.getAttribute("complete")!=null){
+//    			System.out.println("complete: "+e.getAttributeValue("complete"));
+//    		}
+//    		if (e.getAttribute("invalid")!=null){
+//    			System.out.println("invalid: "+e.getAttributeValue("invalid"));
+//    		}
+//    		if (e.getAttribute("imported")!=null){
+//    			System.out.println("imported: "+e.getAttributeValue("imported"));
+//    		}
+//    		if (e.getAttribute("photoid")!=null){
+//    			System.out.println("photoid: "+e.getAttributeValue("photoid"));
+//    		}
+//    	}
     }
     
     /**

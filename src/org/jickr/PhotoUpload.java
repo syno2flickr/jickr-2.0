@@ -35,6 +35,19 @@ public class PhotoUpload {
     private final SafetyLevel safetyLevel;
     private final ContentType contentType;
 
+    private PhotoUpload(Builder builder) {
+		this.photo = builder.photo;
+		this.title = builder.title;
+		this.description = builder.description;
+		this.tags = builder.tags;
+		this.publicFlag = builder.publicFlag;
+		this.friendFlag = builder.friendFlag;
+		this.familyFlag = builder.familyFlag;
+		this.async = builder.async;
+		this.hidden = builder.hidden;
+		this.safetyLevel = builder.safetyLevel;
+		this.contentType = builder.contentType;
+	}
     
 	public File getPhoto() {
 		return photo;
@@ -90,6 +103,7 @@ public class PhotoUpload {
         return async;
     }
     
+       
     /**
      * Builder class for PhotoUpload
      * @author jbrek
@@ -130,18 +144,4 @@ public class PhotoUpload {
 	    	return new PhotoUpload(this);
 	    }
     }
-    
-    private PhotoUpload(Builder builder) {
-		this.photo = builder.photo;
-		this.title = builder.title;
-		this.description = builder.description;
-		this.tags = builder.tags;
-		this.publicFlag = builder.publicFlag;
-		this.friendFlag = builder.friendFlag;
-		this.familyFlag = builder.familyFlag;
-		this.async = builder.async;
-		this.hidden = builder.hidden;
-		this.safetyLevel = builder.safetyLevel;
-		this.contentType = builder.contentType;
-	}
 }
