@@ -26,20 +26,18 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.logging.Logger;
+
 import javax.imageio.ImageIO;
 
 import org.jdom.DataConversionException;
 import org.jdom.Document;
 import org.jdom.Element;
-import org.jickr.Photo.PhotoSize;
-import org.jickr.Photo.Size;
 
 /**
  *
@@ -70,6 +68,10 @@ public class Photo implements Comparable <Photo>{
          */
         SQUARE("_s"),
         /**
+         * Square large photo -   Typically 150x150 square. JPG format.
+         */
+        LARGE_SQUARE("_q"),
+        /**
          * Thumbnail size photo -  Typically 75x100 or 100x67 (Landscape) . JPG format.
          */
         THUMB("_t"),
@@ -77,6 +79,10 @@ public class Photo implements Comparable <Photo>{
          * Small photo - 240x160 (Landscape). JPG format.
          */
         SMALL("_m"),
+        /**
+         * Small photo - 320x239 (Landscape). JPG format.
+         */
+        SMALL_320("_n"),
         /**
          * Medium photo - 500x333 (Landscape). JPG format.
          */
@@ -86,9 +92,21 @@ public class Photo implements Comparable <Photo>{
          */
         MEDIUM_640("_z"),
         /**
-         * Large photo -  typically 1024x683.  JPG format - largest guarenteed JPG.
+         * Medium 800 photo - 800 x 600.  Typically the default sized photo. JPG format.
+         */
+        MEDIUM_800("_c"),
+        /**
+         * Large photo -  typically 1024x683.  JPG format - large JPG.
          */
         LARGE("_b"),
+        /**
+         * Large 1600 photo -  typically 1600x1200.  JPG format - large JPG.
+         */
+        LARGE_1600("_h"),
+        /**
+         * Large 2048 photo -  typically 2048x1600.  JPG format - largest guarenteed JPG.
+         */
+        LARGE_2048("_k"),
         /**
          * Original photo, same as uploaded. In the original size, in the orginal format (GIF, PNG, JPG, TIF).
          */
@@ -1085,14 +1103,24 @@ public class Photo implements Comparable <Photo>{
                     size = Size.THUMB;
                 } else if (sizeString.equals("Square")) {
                     size = Size.SQUARE;
+                } else if (sizeString.equals("Large Square")) {
+                    size = Size.LARGE_SQUARE;
                 } else if (sizeString.equals("Small")) {
                     size = Size.SMALL;
+                } else if (sizeString.equals("Small 320")) {
+                    size = Size.SMALL_320;
                 } else if (sizeString.equals("Medium")) {
                     size = Size.MEDIUM;
                 } else if (sizeString.equals("Medium 640")) {
-                    size = Size.MEDIUM;
+                    size = Size.MEDIUM_640;
+                } else if (sizeString.equals("Medium 800")) {
+                    size = Size.MEDIUM_800;
                 } else if (sizeString.equals("Large")) {
                     size = Size.LARGE;
+                } else if (sizeString.equals("Large 1600")) {
+                    size = Size.LARGE_1600;
+                } else if (sizeString.equals("Large 2048")) {
+                    size = Size.LARGE_2048;
                 } else if (sizeString.equals("Original")) {
                     size = Size.ORIGINAL;
                 } else if (sizeString.equals("Site MP4")) {
