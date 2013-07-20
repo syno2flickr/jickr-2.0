@@ -12,15 +12,7 @@
 
 package org.jickr;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
-import java.util.prefs.Preferences;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
-import org.jdom.output.XMLOutputter;
 
 /**
  * Flickr access information.  Also includes some static methods to perform
