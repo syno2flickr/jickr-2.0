@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
@@ -238,7 +239,7 @@ class Request {
 	 * @throws UnsupportedEncodingException 
 	 * @throws IOException
 	 */
-	private void sendPOSTParams(OutputStream os, String key, Object value) throws FlickrException, FlickrException, UnsupportedEncodingException, IOException{
+	private void sendPOSTParams(OutputStream os, String key, Object value) throws FlickrException, UnsupportedEncodingException, IOException{
 
 		DataOutputStream dos = (DataOutputStream) os;
 
@@ -340,7 +341,7 @@ class Request {
 	 * @return the URLConnection ready to stream
 	 * @throws IOException
 	 */
-	private URLConnection getURLConnectionPOST(String urlString) throws IOException{
+	private URLConnection getURLConnectionPOST(String urlString) throws IOException, SocketTimeoutException{
 
 		// Declaration / instantiation
 		URL url = new URL(urlString);
@@ -357,7 +358,6 @@ class Request {
 		urlConn.setRequestMethod("POST");		 
 		urlConn.setRequestProperty("Connection", "Keep-Alive");		    
 		urlConn.setRequestProperty("Content-Type", "multipart/form-data;boundary="+boundary);
-
 		return urlConn;
 	}
 
@@ -372,13 +372,12 @@ class Request {
 	Document postAndGetResponse() throws FlickrException{
 
 		SAXBuilder sb = new SAXBuilder();
-		XMLOutputter out = new XMLOutputter();
-		Document doc;
+		Document doc; 
 		Element root;
 		InputStream in = null;
 		DataOutputStream dos = null;
 		HttpURLConnection urlConn=null;
-
+ 
 		try {
 			// Get HTTP connection
 			urlConn = (HttpURLConnection) getURLConnectionPOST(base);
@@ -409,7 +408,7 @@ class Request {
 				// Send data
 				sendPOSTParams(dos, entry.getKey(), entry.getValue());			
 			}		    	
-
+			
 			// End transmission
 			dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
 
@@ -430,7 +429,9 @@ class Request {
 			verifyResponse (root);
 
 			return doc;
-		} catch (IOException ex) {
+		}catch (SocketTimeoutException ex) {
+			throw new FlickrException("Timeout Error: "+ex.getMessage(),ex);
+		}catch (IOException ex) {
 			throw new FlickrException("IO Error: "+ex.getMessage(),ex);
 		} catch (JDOMException ex) {
 			throw new FlickrException("Parse Error: "+ex.getMessage(),ex);
@@ -440,7 +441,6 @@ class Request {
 			} catch (Exception ex) {
 				// And silently ignore, since we're just trying to see if it works.  
 				// If it doesn't work, that's good too.
-				ex.printStackTrace();
 			}
 		}
 

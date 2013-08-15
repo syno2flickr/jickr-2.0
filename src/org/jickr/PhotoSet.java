@@ -15,6 +15,7 @@ package org.jickr;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.jdom.Document;
 import org.jdom.Element;
 
@@ -31,6 +32,8 @@ public class PhotoSet {
     private String title;
     private String id;
     private int numPhotos;
+    private String primary; // Primary photo ID
+    
     
     /**
      * Creates a new instance of PhotoSet, using the Element returned by Flickr.
@@ -68,6 +71,7 @@ public class PhotoSet {
         this.numPhotos = Integer.parseInt(photoCountStr);
         this.title = photoset.getChildText("title");
         this.description = photoset.getChildText("description");
+        this.primary = photoset.getAttributeValue("primary");
     }
     
     /**
@@ -85,7 +89,7 @@ public class PhotoSet {
      * @param title required.
      * @param description optionnal.
      * @param primaryPhotoId  required.
-     * @return
+     * @return ID of created set
      * @throws FlickrException
      */
     public static String newPhotoSet(String title, String description, String primaryPhotoId) throws FlickrException{
@@ -96,7 +100,7 @@ public class PhotoSet {
         req.setParameter("title",title);
         if (description!=null)
         	req.setParameter("description", description);
-        req.setParameter("primaryPhotoId",primaryPhotoId);
+        req.setParameter("primary_photo_id",primaryPhotoId);
     	
         Document doc = req.getResponse();
         Element root = doc.getRootElement();
@@ -140,7 +144,16 @@ public class PhotoSet {
         return id;
     }
     
+    
     /**
+     * Get the photo primary ID
+     * @return The ID of primary Photo on Flickr of this PhotoSet.
+     */
+    public String getPrimary() {
+		return primary;
+	}
+
+	/**
      * Retrieve the list of photos associated with this PhotoSet.  This
      * value is not cached, and may be expensive to execute, depending on
      * how many Photos are in the PhotoSet.
@@ -282,6 +295,5 @@ public class PhotoSet {
      */
     public boolean equals(Object o) {
         return ((PhotoSet)o).getID().equals(this.getID());
-    }
-    
+    }    
 }

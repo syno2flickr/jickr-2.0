@@ -17,9 +17,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.jdom.Document;
 import org.jdom.Element;
-import org.jickr.Request;
 /**
  * Information on a User of Flickr.
  *
@@ -330,6 +330,15 @@ public class User {
      * @throws FlickrException in the event of any error
      */
     public List<PhotoCollection> getCollections() throws FlickrException {
+        return getCollections(true);
+    }
+    
+    /**
+     * Get a list of the Collections for this user.
+     * @return collectionlist A list of all Collections for this user
+     * @throws FlickrException in the event of any error
+     */
+    public List<PhotoCollection> getCollections(boolean fetchSets) throws FlickrException {
         
         Request req = new Request();
         req.setParameter("method","flickr.collections.getTree");
@@ -341,7 +350,7 @@ public class User {
         
         List<Element> collections = root.getChild("collections").getChildren("collection");
         for (Element collection : collections)  {
-            tempList.add(new PhotoCollection(collection));
+            tempList.add(new PhotoCollection(collection, fetchSets));
         }
         return tempList;
     }
