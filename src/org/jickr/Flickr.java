@@ -24,9 +24,9 @@ public class Flickr {
     private static String apiKey;
     private static String sharedSecret;
 
-    private static final String baseURL = "http://www.flickr.com/services/rest/"; /// REST url service
-    private static final String uploadURL = "http://api.flickr.com/services/upload/"; /// Upload url service
-    private static final String replaceURL = "http://api.flickr.com/services/upload/"; /// Replace photos url service
+    private static final String baseURL = "https://api.flickr.com/services/rest/"; /// REST url service
+    private static final String uploadURL = "https://up.flickr.com/services/upload/"; /// Upload url service
+    private static final String replaceURL = "https://up.flickr.com/services/replace/"; /// Replace photos url service
     
     // No constructor - this class is static only.
     private Flickr() {

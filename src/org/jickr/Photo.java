@@ -38,6 +38,7 @@ import javax.imageio.ImageIO;
 import org.jdom.DataConversionException;
 import org.jdom.Document;
 import org.jdom.Element;
+import org.jickr.License.LicenseType;
 
 /**
  *
@@ -282,6 +283,7 @@ public class Photo implements Comparable <Photo>{
     private Media media;
     private PhotoPermissions perms = null;
     private SafetyLevel safety_level;
+    private LicenseType licence;
     
     // Boolean to track if we've gotten the extra information associated with a Photo
     private boolean gotInfo = false;
@@ -846,6 +848,11 @@ public class Photo implements Comparable <Photo>{
 	public SafetyLevel getSafety_level() {
 		return safety_level;
 	}
+	
+
+	public LicenseType getLicence() {
+		return licence;
+	}
 
 
 	/**
@@ -962,6 +969,9 @@ public class Photo implements Comparable <Photo>{
             
             // Safety level
             safety_level = SafetyLevel.getEnumFromValue(Integer.parseInt(root.getChild("photo").getAttributeValue("safety_level")));
+            
+            // Licence
+            licence = LicenseType.getEnumFromValue(Integer.parseInt(root.getChild("photo").getAttributeValue("license")));
             
         } catch (NullPointerException npe) {
             throw new FlickrException("Oddly formed XML error",npe);

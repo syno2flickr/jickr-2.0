@@ -67,8 +67,7 @@ public enum Privacy {
 			return Privacy.FRIENDS;
 		else 
 			return Privacy.PRIVATE;
-	}
-	
+	}	
 	
 	public static Privacy valueOf(int value){
 		switch(value){

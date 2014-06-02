@@ -1,14 +1,7 @@
 package org.jickr;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import org.jdom.Document;
 import org.jdom.Element;
-import org.xml.sax.SAXException;
 
 /**
  * Class Uploader Allow upload content to flickr
@@ -88,18 +81,18 @@ public class UserLimitations {
 	public String showUsageAndLimitations() throws FlickrException{
 		int denomMega = 1024*1024;
 		String res;
-		res="Usage and limitations status\n";
-		res+="  Pro account: "+ (this.isPro()?"yes":"no")+"\n";
-		res+="  Bandwith:\n";
-		res+="\tUnlimited: "+(this.isBandwidthUnlimited()?"yes":"no"+
+		res="Usage and limitations status:\n";
+		res+="\tPro account: "+ (this.isPro()?"yes":"no")+"\n";
+		res+="\tBandwith:\n";
+		res+="\t  Unlimited: "+(this.isBandwidthUnlimited()?"yes":"no"+
 						   "\tMax: "+this.getBandwidthMaxBytes()/denomMega+"MB" +
 						   "\tRemaining: "+this.getBandwidthRemainingBytes()/denomMega+"MB"+
 						   "\tUsed: "+this.getBandwidthUsedBytes()/denomMega+"MB")+"\n";
-		res+="  Image:\n";
-		res+="\tMax size: "+ this.getFilesizeMaxBytes()/denomMega+"MB\n";
-		res+="  Video:\n";
-		res+="\tMax size: "+this.getVideosizeMaxBytes()/denomMega+"MB"+
-						   "\tRemaing: "+this.getVideosRemaining()+
+		res+="\tImage:\n";
+		res+="\t  Max size: "+ this.getFilesizeMaxBytes()/denomMega+"MB\n";
+		res+="\tVideo:\n";
+		res+="\t  Max size: "+this.getVideosizeMaxBytes()/denomMega+"MB"+
+						   "\tRemaining: "+this.getVideosRemaining()+
 						   "\tUploaded: "+this.getVideosUploaded()+"\n";
 		return res;
 	}
@@ -139,6 +132,10 @@ public class UserLimitations {
 		return setsCreated;
 	}
 
+	/**
+	 * Always return "lots" for all kind (pro, free) of user. 
+	 */
+	@Deprecated
 	public String getSetsRemaining() throws FlickrException {
 		if (!gotInfos) getUploadStatus();
 		return setsRemaining;
